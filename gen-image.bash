@@ -174,12 +174,21 @@ cd /common/mpc-1.1.0
 make
 make install
 
+echo "-- BUILD gcc --"
+cd /common/gcc-8.2.0
+sed -e '/m64=/s/lib64/lib/' -i.orig gcc/config/i386/t-linux64
+mkdir build
+cd build
+SED=sed ../configure --prefix=/buildsystem --enable-languages=c,c++ --disable-multilib --disable-bootstrap --disable-libmpx --with-system-zlib
+make
+
 echo "DOCKER BUILD COMPLETE"
 EOF
 chmod a+x "${common_dir}/docker-build.bash"
 
 # - copy common files into docker dir - #
 
+rm -rf "${docker_dir}/common"
 cp -a "${common_dir}" "${docker_dir}"
 
 # - run docker build - #
@@ -189,7 +198,7 @@ FROM ${docker_from}
 
 COPY ./common/qemu/usr/bin/${qemu_bin} /usr/bin/${qemu_bin}
 
-RUN printf "1" > /cache-break
+RUN printf "3" > /cache-break
 
 COPY ./common /common
 
@@ -211,7 +220,7 @@ RUN printf "deb http://archive.debian.org/debian/ jessie main\n"\
 "" > /etc/apt/sources.list && \
 apt-get update || true && \
 apt-get install -y --no-install-recommends \
-  gcc g++ make m4 \
+  gcc g++ make m4 zlib1g-dev \
   && \
 cd /common && \
 ./docker-build.bash && \
