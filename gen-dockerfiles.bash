@@ -1,12 +1,15 @@
 #!/bin/bash
 
 function gen_docker() {
-  local __file="${1}"
+  local __arch="${1}"
   local __qemu="${2}"
-  local __docker="${3}"
+  local __base="${3}"
 
-  cat > "${__file}" <<EOF
-FROM ${__docker} AS dabuild.step1
+  local __image="dabuild_x86_64_to_${__arch}"
+  local __step="./host_x86_64/${__image}"
+
+  cat > "${__step}:latest_prep_1.Dockerfile" <<EOF
+FROM ${__base}
 COPY ./${__qemu} /usr/bin/${__qemu}
 ENV \\
   PATH="/buildsystem/bin:\${PATH}" \\
@@ -27,20 +30,23 @@ RUN printf \\
 RUN apt-get update || true
 RUN apt-get install -y --no-install-recommends \\
   gcc g++ make m4 zlib1g-dev xz-utils curl
+EOF
 
-FROM dabuild.step1 AS dabuild.step2
+  cat > "${__step}:latest_prep_2.Dockerfile" <<EOF
+FROM ${__image}:latest_prep_1
 COPY ./dabuild-download-deps.bash /dabuild-download-deps.bash
 RUN /bin/bash /dabuild-download-deps.bash
 
-FROM dabuild.step2 AS dabuild.step3
 RUN cd /sources/gmp-6.1.2 && \\
   cp -v configfsf.guess config.guess && \\
   cp -v configfsf.sub config.sub && \\
   ./configure --prefix=/buildsystem --enable-cxx --disable-static --build="\$(uname -m)-unknown-linux-gnu" && \\
   make && \\
   make install
+EOF
 
-FROM amd64/debian:jessie-slim
+  cat > "${__step}:latest.Dockerfile" <<EOF
+FROM ${__base}
 ENV \\
   PATH="/buildsystem/bin:\${PATH}" \\
   C_INCLUDE_PATH="/buildsystem/include" \\
@@ -52,26 +58,26 @@ ENV \\
   CXXFLAGS="-I/buildsystem/include" \\
   LDFLAGS="-L/buildsystem/lib"
 COPY ./qemu-x86_64-static /usr/bin/qemu-x86_64-static
-COPY --from=dabuild.step3 /buildsystem /buildsystem
+COPY --from=${__image}:latest_prep_2 /buildsystem /buildsystem
 EOF
 }
 
 gen_docker \
-  "./host_x86_64/target_x86_32.Dockerfile" \
+  "x86_32" \
   "qemu-i386-static" \
   "i386/debian:jessie-slim"
 
 gen_docker \
-  "./host_x86_64/target_x86_64.Dockerfile" \
+  "x86_64" \
   "qemu-x86_64-static" \
   "amd64/debian:jessie-slim"
 
 gen_docker \
-  "./host_x86_64/target_armv7_32.Dockerfile" \
+  "armv7_32" \
   "qemu-arm-static" \
   "arm32v7/debian:jessie-slim"
 
 gen_docker \
-  "./host_x86_64/target_armv8_64.Dockerfile" \
+  "armv8_64" \
   "qemu-aarch64-static" \
   "arm64v8/debian:jessie-slim"
