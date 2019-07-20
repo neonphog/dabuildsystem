@@ -1,5 +1,5 @@
-FROM arm64v8/debian:jessie-slim AS dabuild.step1
-COPY ./qemu-aarch64-static /usr/bin/qemu-aarch64-static
+FROM i386/debian:jessie-slim AS dabuild.step1
+COPY ./qemu-i386-static /usr/bin/qemu-i386-static
 ENV \
   PATH="/buildsystem/bin:${PATH}" \
   C_INCLUDE_PATH="/buildsystem/include" \
