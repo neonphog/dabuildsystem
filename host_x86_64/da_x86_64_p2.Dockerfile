@@ -1,4 +1,4 @@
-FROM dabuild_x86_64_to_armv8_64:latest_prep_1
+FROM da_x86_64_p1
 COPY ./dabuild-download-deps.bash /dabuild-download-deps.bash
 RUN /bin/bash /dabuild-download-deps.bash
 

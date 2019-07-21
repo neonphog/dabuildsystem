@@ -5,10 +5,10 @@ function gen_docker() {
   local __qemu="${2}"
   local __base="${3}"
 
-  local __image="dabuild_x86_64_to_${__arch}"
+  local __image="da_${__arch}"
   local __step="./host_x86_64/${__image}"
 
-  cat > "${__step}_latest_prep_1.Dockerfile" <<EOF
+  cat > "${__step}_p1.Dockerfile" <<EOF
 FROM ${__base}
 COPY ./${__qemu} /usr/bin/${__qemu}
 ENV \\
@@ -32,8 +32,8 @@ RUN apt-get install -y --no-install-recommends \\
   gcc g++ make m4 zlib1g-dev xz-utils curl
 EOF
 
-  cat > "${__step}_latest_prep_2.Dockerfile" <<EOF
-FROM ${__image}:latest_prep_1
+  cat > "${__step}_p2.Dockerfile" <<EOF
+FROM ${__image}_p1
 COPY ./dabuild-download-deps.bash /dabuild-download-deps.bash
 RUN /bin/bash /dabuild-download-deps.bash
 
@@ -45,7 +45,7 @@ RUN cd /sources/gmp-6.1.2 && \\
   make install
 EOF
 
-  cat > "${__step}_latest.Dockerfile" <<EOF
+  cat > "${__step}.Dockerfile" <<EOF
 FROM ${__base}
 ENV \\
   PATH="/buildsystem/bin:\${PATH}" \\
@@ -58,7 +58,7 @@ ENV \\
   CXXFLAGS="-I/buildsystem/include" \\
   LDFLAGS="-L/buildsystem/lib"
 COPY ./qemu-x86_64-static /usr/bin/qemu-x86_64-static
-COPY --from=${__image}:latest_prep_2 /buildsystem /buildsystem
+COPY --from=${__image}_p2 /buildsystem /buildsystem
 EOF
 }
 

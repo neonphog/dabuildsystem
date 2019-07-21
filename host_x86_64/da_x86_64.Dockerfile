@@ -1,4 +1,4 @@
-FROM i386/debian:jessie-slim
+FROM amd64/debian:jessie-slim
 ENV \
   PATH="/buildsystem/bin:${PATH}" \
   C_INCLUDE_PATH="/buildsystem/include" \
@@ -10,4 +10,4 @@ ENV \
   CXXFLAGS="-I/buildsystem/include" \
   LDFLAGS="-L/buildsystem/lib"
 COPY ./qemu-x86_64-static /usr/bin/qemu-x86_64-static
-COPY --from=dabuild_x86_64_to_x86_32:latest_prep_2 /buildsystem /buildsystem
+COPY --from=da_x86_64_p2 /buildsystem /buildsystem

@@ -1,4 +1,4 @@
-FROM dabuild_x86_64_to_x86_32:latest_prep_1
+FROM da_x86_32_p1
 COPY ./dabuild-download-deps.bash /dabuild-download-deps.bash
 RUN /bin/bash /dabuild-download-deps.bash
 
