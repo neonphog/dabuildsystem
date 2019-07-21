@@ -8,7 +8,7 @@ function gen_docker() {
   local __image="dabuild_x86_64_to_${__arch}"
   local __step="./host_x86_64/${__image}"
 
-  cat > "${__step}:latest_prep_1.Dockerfile" <<EOF
+  cat > "${__step}_latest_prep_1.Dockerfile" <<EOF
 FROM ${__base}
 COPY ./${__qemu} /usr/bin/${__qemu}
 ENV \\
@@ -32,7 +32,7 @@ RUN apt-get install -y --no-install-recommends \\
   gcc g++ make m4 zlib1g-dev xz-utils curl
 EOF
 
-  cat > "${__step}:latest_prep_2.Dockerfile" <<EOF
+  cat > "${__step}_latest_prep_2.Dockerfile" <<EOF
 FROM ${__image}:latest_prep_1
 COPY ./dabuild-download-deps.bash /dabuild-download-deps.bash
 RUN /bin/bash /dabuild-download-deps.bash
@@ -45,7 +45,7 @@ RUN cd /sources/gmp-6.1.2 && \\
   make install
 EOF
 
-  cat > "${__step}:latest.Dockerfile" <<EOF
+  cat > "${__step}_latest.Dockerfile" <<EOF
 FROM ${__base}
 ENV \\
   PATH="/buildsystem/bin:\${PATH}" \\
