@@ -10,4 +10,4 @@ ENV \
   CXXFLAGS="-I/buildsystem/include" \
   LDFLAGS="-L/buildsystem/lib"
 COPY ./qemu-x86_64-static /usr/bin/qemu-x86_64-static
-COPY --from=da_x86_32_p2 /buildsystem /buildsystem
+COPY --from=neonphog/dabuildsystem:da_x86_32_p3 /buildsystem /buildsystem

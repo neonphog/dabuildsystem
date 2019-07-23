@@ -85,21 +85,35 @@ RUN cd /sources && ./da-dl.bash \\
 EOF
 
   cat > "${__step}_p2.Dockerfile" <<EOF
-FROM ${__image}_p1
+FROM neonphog/dabuildsystem:${__image}_p1
 RUN cd /sources/gmp-6.1.2 && \\
   cp -v configfsf.guess config.guess && \\
   cp -v configfsf.sub config.sub && \\
   ./configure --prefix=/buildsystem --enable-cxx --disable-static --build="\$(uname -m)-unknown-linux-gnu" && \\
-  make && \\
+  make -j\$(nproc) && \\
   make install
 RUN cd /sources/mpfr-4.0.2 && \\
   ./configure --prefix=/buildsystem --disable-static --enable-thread-safe && \\
-  make && \\
+  make -j\$(nproc) && \\
   make install
 RUN cd /sources/mpc-1.1.0 && \\
   ./configure --prefix=/buildsystem --disable-static && \\
-  make && \\
+  make -j\$(nproc) && \\
   make install
+EOF
+
+  cat > "${__step}_p3.Dockerfile" <<EOF
+FROM neonphog/dabuildsystem:${__image}_p2
+RUN cd /sources/gcc-8.2.0 && \\
+  sed -e '/m64=/s/lib64/lib/' -i.orig gcc/config/i386/t-linux64 && \\
+  mkdir build && \\
+  cd build && \\
+  SED=sed ../configure --prefix=/buildsystem --enable-languages=c,c++ --disable-multilib --disable-bootstrap --disable-libmpx --with-system-zlib && \\
+  make -j\$(nproc) && \\
+  make install && \\
+  ln -sv /buildsystem/bin/gcc /buildsystem/bin/cc && \\
+  install -v -dm755 /buildsystem/lib/bfd-plugins && \\
+  ln -sfv ../../libexec/gcc/\$(gcc -dumpmachine)/8.2.0/liblto_plugin.so /buildsystem/lib/bfd-plugins/
 EOF
 
   cat > "${__step}.Dockerfile" <<EOF
@@ -115,7 +129,7 @@ ENV \\
   CXXFLAGS="-I/buildsystem/include" \\
   LDFLAGS="-L/buildsystem/lib"
 COPY ./qemu-x86_64-static /usr/bin/qemu-x86_64-static
-COPY --from=${__image}_p2 /buildsystem /buildsystem
+COPY --from=neonphog/dabuildsystem:${__image}_p3 /buildsystem /buildsystem
 EOF
 
   cat > "${__step}_test.bash" <<EOF
@@ -123,9 +137,10 @@ EOF
 
 set -Eeuxo pipefail
 
-docker build -t "${__image}_p1" -f "./${__image}_p1.Dockerfile" .
-docker build -t "${__image}_p2" -f "./${__image}_p2.Dockerfile" .
-docker build -t "${__image}" -f "./${__image}.Dockerfile" .
+docker build -t "neonphog/dabuildsystem:${__image}_p1" -f "./${__image}_p1.Dockerfile" .
+docker build -t "neonphog/dabuildsystem:${__image}_p2" -f "./${__image}_p2.Dockerfile" .
+docker build -t "neonphog/dabuildsystem:${__image}_p3" -f "./${__image}_p3.Dockerfile" .
+docker build -t "neonphog/dabuildsystem:${__image}" -f "./${__image}.Dockerfile" .
 EOF
   chmod a+x "${__step}_test.bash"
 }
