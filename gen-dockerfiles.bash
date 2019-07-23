@@ -129,6 +129,16 @@ ENV \\
   CXXFLAGS="-I/buildsystem/include" \\
   LDFLAGS="-L/buildsystem/lib"
 COPY ./qemu-x86_64-static /usr/bin/qemu-x86_64-static
+RUN printf \\
+"deb http://archive.debian.org/debian/ jessie main\\n"\\
+"deb-src http://archive.debian.org/debian/ jessie main\\n"\\
+"deb http://security.debian.org jessie/updates main\\n"\\
+"deb-src http://security.debian.org jessie/updates main\\n"\\
+  > /etc/apt/sources.list &&\\
+  apt-get update || true &&\\
+  apt-get install -y --no-install-recommends \\
+    libc6-dev binutils &&\\
+  rm -rf /var/lib/apt/lists/*
 COPY --from=neonphog/dabuildsystem:${__image}_p3 /buildsystem /buildsystem
 EOF
 
